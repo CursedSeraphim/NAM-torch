@@ -3,9 +3,74 @@ import numpy as np
 from itertools import combinations
 
 # define the 2D Neural Additive Model
-class NAM2D(th.nn.Module):
+class NAM2DOnly(th.nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_layers=1):
-        super(NAM2D, self).__init__()
+        super(NAM2DOnly, self).__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.num_layers = num_layers
+        self.submodules = th.nn.ModuleList()
+        
+        # initialize the 2D submodules
+        for i, j in combinations(range(input_dim), 2):
+            submodule = self.create_submodule(num_layers, hidden_dim, output_dim, input_size=2)
+            self.submodules.append(submodule)
+    
+    # TODO make the submodule architecture a parameter
+    def create_submodule(self, num_layers, hidden_dim, output_dim, input_size=1):
+        submodule = th.nn.Sequential()
+        for l in range(num_layers):
+            if l == 0:
+                submodule.add_module(f"linear_{l}", th.nn.Linear(input_size, hidden_dim))
+            else:
+                submodule.add_module(f"linear_{l}", th.nn.Linear(hidden_dim, hidden_dim))
+            submodule.add_module(f"ELU_{l}", th.nn.ELU())
+            # TODO make this optional as a parameter
+            submodule.add_module(f"dropout_{l}", th.nn.Dropout(0.5))
+        submodule.add_module(f"linear_{num_layers}", th.nn.Linear(hidden_dim, output_dim))
+        return submodule
+
+    def forward(self, x):
+        output = th.zeros(x.shape[0], self.output_dim)
+        
+        # process 2D submodules
+        submodule_idx = 0
+        for i, j in combinations(range(self.input_dim), 2):
+            output += self.submodules[submodule_idx](x[:, [i, j]])
+            submodule_idx += 1
+
+        return th.nn.functional.softmax(output, dim=1)
+    
+    def init_weights(self, m):
+        if type(m) == th.nn.Linear:
+            th.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0.01)
+
+    # output what each submodule predicts for each input between 0 and 1 for a given resolution
+    def get_feature_maps(self, resolution=100):
+        # initialize output tensors
+        output_2D = th.zeros(self.input_dim * (self.input_dim - 1) // 2, resolution, resolution, self.output_dim)
+
+        # process 2D submodules
+        submodule_idx = 0
+        pair_idx = 0
+        for i, j in combinations(range(self.input_dim), 2):
+            for k in range(resolution):
+                for l in range(resolution):
+                    input_values = th.tensor([[k / (resolution - 1), l / (resolution - 1)]]).float()
+                    output_2D[pair_idx, k, l] = self.submodules[submodule_idx](input_values)
+            pair_idx += 1
+            submodule_idx += 1
+
+        # return output as numpy arrays
+        return output_2D.detach().numpy()
+
+
+# define the 2D Neural Additive Model
+class NAM2DOnly(th.nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers=1):
+        super(NAM2DOnly, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -22,6 +87,7 @@ class NAM2D(th.nn.Module):
             submodule = self.create_submodule(num_layers, hidden_dim, output_dim, input_size=2)
             self.submodules.append(submodule)
     
+    # TODO make the submodule architecture a parameter
     def create_submodule(self, num_layers, hidden_dim, output_dim, input_size=1):
         submodule = th.nn.Sequential()
         for l in range(num_layers):
@@ -30,7 +96,8 @@ class NAM2D(th.nn.Module):
             else:
                 submodule.add_module(f"linear_{l}", th.nn.Linear(hidden_dim, hidden_dim))
             submodule.add_module(f"ELU_{l}", th.nn.ELU())
-            submodule.add_module(f"dropout_{l}", th.nn.Dropout(0.5))
+            # TODO make this optional as a parameter
+            # submodule.add_module(f"dropout_{l}", th.nn.Dropout(0.5))
         submodule.add_module(f"linear_{num_layers}", th.nn.Linear(hidden_dim, output_dim))
         return submodule
 

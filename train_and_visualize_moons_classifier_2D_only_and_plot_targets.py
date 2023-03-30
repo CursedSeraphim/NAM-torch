@@ -1,5 +1,6 @@
 from NAM import NAM2DOnly
-from sklearn.datasets import load_iris
+from sklearn.datasets import make_moons
+from sklearn.utils import Bunch
 import torch as th
 import torch.nn.functional as F
 import torch.optim as optim
@@ -7,17 +8,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import combinations
 
-# load the dataset
-sklearn_dataset = load_iris()
-X = sklearn_dataset.data
-y = sklearn_dataset.target
+# generate the data
+X, y = make_moons(n_samples=300, noise=0.05, random_state=0)
 
-# store the original range of the input dimensions
-input_ranges = np.zeros((X.shape[1], 2))
-for i in range(X.shape[1]):
+num_features = X.shape[1]
+output_dim = len(np.unique(y))
+input_ranges = np.zeros((num_features, 2))
+for i in range(num_features):
     input_ranges[i,0] = np.min(X[:,i])
     input_ranges[i,1] = np.max(X[:,i])
-    X[:,i] = (X[:,i] - np.min(X[:,i])) / (np.max(X[:,i]) - np.min(X[:,i]))
+
+# store the feature names and target names
+feature_names = ['x', 'y']
+target_names = ['Class 0', 'Class 1']
+
+# create the sklearn_dataset object
+sklearn_dataset = Bunch(data=X,
+                        target=y,
+                        feature_names=feature_names,
+                        target_names=target_names)
+
+# create a scatterplot of the data
+plt.scatter(X[:, 0], X[:, 1], c=y)
+
+# add a title and labels to the plot
+plt.title('Scatterplot of Moon Data')
+plt.xlabel(feature_names[0])
+plt.ylabel(feature_names[1])
+
+# show the plot
+plt.show()
 
 # normalize the data
 X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
@@ -35,7 +55,7 @@ X_test = X[train_size:]
 y_test = y[train_size:]
 
 # define the neural additive model
-model = NAM2DOnly(4, 10, 3, 4)
+model = NAM2DOnly(input_dim=num_features, hidden_dim=32, output_dim=output_dim, num_layers=4)
 
 # initialize the model parameters, set all seeds for reproducibility
 seed = 2
@@ -99,36 +119,26 @@ for epoch in range(1000):
 print(f'Final test accuracy: {test_accuracy:.4f}')
 
 # get the submodule feature_maps
-resolution = 5
+resolution = 10
 feature_maps_1D, feature_maps_2D = model.get_feature_maps(resolution=resolution)
 print(feature_maps_1D.shape)
 print(feature_maps_2D.shape)
 
-# visualize 1D feature_maps
-fig, axs = plt.subplots(4, 3, figsize=(10, 10))
-for i in range(4):
-    for j in range(3):
-        x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], resolution)
-        axs[i, j].plot(x, feature_maps_1D[i, :, j])
-        axs[i, j].set_title(f'{feature_dict[i]} for {output_class_dict[j]}')
-        axs[i, j].axhline(0, color='black', linestyle='--')
-
-plt.tight_layout()
-plt.show()
-
 # visualize 2D feature_maps
-pair_indices = list(combinations(range(4), 2))
-num_pairs = len(pair_indices)
+num_pairs, _, _, num_classes = feature_maps_2D.shape
+pair_indices = list(combinations(range(num_features), 2))
 
-fig, axs = plt.subplots(num_pairs, 3, figsize=(12, 4 * num_pairs), squeeze=False)
+fig, axs = plt.subplots(num_pairs, num_classes, figsize=(12, 4 * num_pairs), squeeze=False)
 for pair_idx, (i, j) in enumerate(pair_indices):
-    for output_feature in range(3):
+    for output_feature in range(num_classes):
         x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], resolution)
         y = np.linspace(input_ranges[j, 0], input_ranges[j, 1], resolution)
         X, Y = np.meshgrid(x, y)
         Z = feature_maps_2D[pair_idx, :, :, output_feature].T
 
+        target_class = output_feature
         im = axs[pair_idx, output_feature].contourf(X, Y, Z, cmap='viridis', levels=20)
+        axs[pair_idx, output_feature].scatter(X_test[y_test==target_class, i], X_test[y_test==target_class, j], c=y_test[y_test==target_class], alpha=0.5, cmap='viridis')
         axs[pair_idx, output_feature].set_title(f'{feature_dict[i]} and {feature_dict[j]} for {output_class_dict[output_feature]}')
 
 plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=0.6)
