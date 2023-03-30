@@ -138,7 +138,7 @@ for pair_idx, (i, j) in enumerate(pair_indices):
 
         target_class = output_feature
         im = axs[pair_idx, output_feature].contourf(X, Y, Z, cmap='viridis', levels=20)
-        axs[pair_idx, output_feature].scatter(X_test[y_test==target_class, i], X_test[y_test==target_class, j], c=y_test[y_test==target_class], alpha=0.5, cmap='viridis')
+        axs[pair_idx, output_feature].scatter(X_test[:, i], X_test[:, j], c=y_test, alpha=0.5, cmap='viridis')
         axs[pair_idx, output_feature].set_title(f'{feature_dict[i]} and {feature_dict[j]} for {output_class_dict[output_feature]}')
 
 plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=0.6)
