@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+from itertools import combinations
 
 # load the dataset
 sklearn_dataset = load_iris()
@@ -34,7 +35,7 @@ X_test = X[train_size:]
 y_test = y[train_size:]
 
 # define the neural additive model
-model = NAM2D(4, 10, 3, 2)
+model = NAM2D(4, 10, 3, 4)
 
 # initialize the model parameters, set all seeds for reproducibility
 seed = 2
@@ -98,7 +99,8 @@ for epoch in range(1000):
 print(f'Final test accuracy: {test_accuracy:.4f}')
 
 # get the submodule feature_maps
-feature_maps_1D, feature_maps_2D = model.get_feature_maps()
+resolution = 5
+feature_maps_1D, feature_maps_2D = model.get_feature_maps(resolution=resolution)
 print(feature_maps_1D.shape)
 print(feature_maps_2D.shape)
 
@@ -106,7 +108,7 @@ print(feature_maps_2D.shape)
 fig, axs = plt.subplots(4, 3, figsize=(10, 10))
 for i in range(4):
     for j in range(3):
-        x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], 100)
+        x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], resolution)
         axs[i, j].plot(x, feature_maps_1D[i, :, j])
         axs[i, j].set_title(f'{feature_dict[i]} for {output_class_dict[j]}')
         axs[i, j].axhline(0, color='black', linestyle='--')
@@ -118,16 +120,16 @@ plt.show()
 pair_indices = list(combinations(range(4), 2))
 num_pairs = len(pair_indices)
 
-fig, axs = plt.subplots(num_pairs, 3, figsize=(10, 10 * num_pairs // 3))
+fig, axs = plt.subplots(num_pairs, 3, figsize=(12, 4 * num_pairs), squeeze=False)
 for pair_idx, (i, j) in enumerate(pair_indices):
     for output_feature in range(3):
-        x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], 100)
-        y = np.linspace(input_ranges[j, 0], input_ranges[j, 1], 100)
+        x = np.linspace(input_ranges[i, 0], input_ranges[i, 1], resolution)
+        y = np.linspace(input_ranges[j, 0], input_ranges[j, 1], resolution)
         X, Y = np.meshgrid(x, y)
         Z = feature_maps_2D[pair_idx, :, :, output_feature].T
 
         im = axs[pair_idx, output_feature].contourf(X, Y, Z, cmap='viridis', levels=20)
         axs[pair_idx, output_feature].set_title(f'{feature_dict[i]} and {feature_dict[j]} for {output_class_dict[output_feature]}')
 
-plt.tight_layout()
+plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=0.6)
 plt.show()

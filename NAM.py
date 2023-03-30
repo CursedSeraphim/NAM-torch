@@ -56,21 +56,15 @@ class NAM2D(th.nn.Module):
 
     # output what each submodule predicts for each input between 0 and 1 for a given resolution
     def get_feature_maps(self, resolution=100):
-        print('in get_feature_maps')
         # initialize output tensors
         output_1D = th.zeros(self.input_dim, resolution, self.output_dim)
         output_2D = th.zeros(self.input_dim * (self.input_dim - 1) // 2, resolution, resolution, self.output_dim)
-
-        print('output_1D.shape', output_1D.shape)
-        print('output_2D.shape', output_2D.shape)
 
         # process 1D submodules
         for i in range(self.input_dim):
             for j in range(resolution):
                 input_value = th.tensor([[j / (resolution - 1)]]).float()
                 output_1D[i, j] = self.submodules[i](input_value)
-
-        print('after 1D submodules')
 
         # process 2D submodules
         submodule_idx = self.input_dim
@@ -83,10 +77,9 @@ class NAM2D(th.nn.Module):
             pair_idx += 1
             submodule_idx += 1
 
-        print('after 2D submodules')
-
         # return output as numpy arrays
         return output_1D.detach().numpy(), output_2D.detach().numpy()
+
 
 
 
