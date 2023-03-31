@@ -124,6 +124,21 @@ feature_maps_1D, feature_maps_2D = model.get_feature_maps(resolution=resolution)
 print(feature_maps_1D.shape)
 print(feature_maps_2D.shape)
 
+# TODO revert the normalization of the data in the feature maps before plotting
+# Calculate the min and range of the original data
+data_min = X.min(axis=0)
+data_range = X.max(axis=0) - data_min
+
+# Revert the normalization of the data in the feature maps
+def revert_normalization(feature_maps, data_min, data_range):
+    for i in range(feature_maps.shape[-1]):
+        feature_maps[..., i] = feature_maps[..., i] * data_range[i] + data_min[i]
+    return feature_maps
+
+# Apply the revert_normalization function to the feature_maps_1D and feature_maps_2D
+feature_maps_1D = revert_normalization(feature_maps_1D, data_min, data_range)
+feature_maps_2D = revert_normalization(feature_maps_2D, data_min, data_range)
+
 # visualize 2D feature_maps
 num_pairs, _, _, num_classes = feature_maps_2D.shape
 pair_indices = list(combinations(range(num_features), 2))
@@ -140,6 +155,10 @@ for pair_idx, (i, j) in enumerate(pair_indices):
         im = axs[pair_idx, output_feature].contourf(X, Y, Z, cmap='viridis', levels=20)
         axs[pair_idx, output_feature].scatter(X_test[:, i], X_test[:, j], c=y_test, alpha=0.5, cmap='viridis')
         axs[pair_idx, output_feature].set_title(f'{feature_dict[i]} and {feature_dict[j]} for {output_class_dict[output_feature]}')
+        
+        # Add x and y-axis labels for the heatmaps
+        axs[pair_idx, output_feature].set_xlabel(feature_dict[i])
+        axs[pair_idx, output_feature].set_ylabel(feature_dict[j])
 
 plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=0.6)
 plt.show()
