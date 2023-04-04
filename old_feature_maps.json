@@ -1,8 +1,8 @@
 {
     "1D": {
-        "feature_map_0_Class_0": {
+        "feature_map_0_class_0": {
             "feature": "x",
-            "class": "Class_0",
+            "class": "Class 0",
             "data": [
                 33.05880355834961,
                 21.565921783447266,
@@ -16,9 +16,9 @@
                 -22.601564407348633
             ]
         },
-        "feature_map_0_Class_1": {
+        "feature_map_0_class_1": {
             "feature": "x",
-            "class": "Class_1",
+            "class": "Class 1",
             "data": [
                 -27.33661460876465,
                 -17.47765350341797,
@@ -32,9 +32,9 @@
                 16.665578842163086
             ]
         },
-        "feature_map_1_Class_0": {
+        "feature_map_1_class_0": {
             "feature": "y",
-            "class": "Class_0",
+            "class": "Class 0",
             "data": [
                 -3.640364408493042,
                 -3.269474744796753,
@@ -48,9 +48,9 @@
                 0.6607671976089478
             ]
         },
-        "feature_map_1_Class_1": {
+        "feature_map_1_class_1": {
             "feature": "y",
-            "class": "Class_1",
+            "class": "Class 1",
             "data": [
                 9.123865127563477,
                 8.314655303955078,
@@ -66,10 +66,10 @@
         }
     },
     "2D": {
-        "feature_map_0_1_Class_0": {
+        "feature_map_0_class_0": {
             "feature_1": "x",
             "feature_2": "y",
-            "class": "Class_0",
+            "class": "Class 0",
             "data": [
                 [
                     1.7844780683517456,
@@ -193,10 +193,10 @@
                 ]
             ]
         },
-        "feature_map_0_1_Class_1": {
+        "feature_map_0_class_1": {
             "feature_1": "x",
             "feature_2": "y",
-            "class": "Class_1",
+            "class": "Class 1",
             "data": [
                 [
                     6.388207912445068,
